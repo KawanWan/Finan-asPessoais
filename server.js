@@ -51,28 +51,4 @@ function verifyJWT(req, res, next) {
 app.use('/', require('./routes/pages'));
 app.use('/auth', require('./routes/auth'));
 
-const users = [];
-
-// app.get('/users', verifyJWT, (req, res) => {
-//     res.json(users)
-// });
-
-// app.post('/login', async (req, res) => {
-//     const user = users.find(user => user.name === req.body.name);
-//     if(user == null){
-//         return res.status(400).send('Não foi possível encontrar o usuário!');
-//     }
-
-//     try {
-//         if (await bcrypt.compare(req.body.password, user.password)) {
-//             const token = jwt.sign({userId: user.userId}, process.env.SECRET, { expiresIn: 300 });
-//             res.json({ auth: true, token })
-//         } else {
-//             res.send('Senha incorreta')
-//         }
-//     } catch {
-//         res.status(500).send();
-//     }
-// });
-
 app.listen(3000);
