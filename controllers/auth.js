@@ -1,6 +1,7 @@
 const mysql = require('mysql2');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { promisify } = require('util');
 
 const db = mysql.createConnection({
     host: process.env.DATABASE_HOST,
@@ -11,13 +12,13 @@ const db = mysql.createConnection({
 
 exports.login = async (req, res) => {
     try {
-        const {email, password} = req.body;
+        const { email, password } = req.body;
 
         if (!email || !password) {
             return res.status(400).render('login', {
                 message: 'Por favor forneça um email e senha'
             })
-        } 
+        }
 
         db.query('SELECT * FROM users WHERE email = ?', [email], async (error, results) => {
             console.log(results);
@@ -28,9 +29,9 @@ exports.login = async (req, res) => {
             } else {
                 const id = results[0].id;
 
-                const token = jwt.sign({id}, process.env.JWT_SECRET, {
+                const token = jwt.sign({ id }, process.env.JWT_SECRET, {
                     expiresIn: process.env.JWT_EXPIRES_IN
-                }) 
+                })
 
                 console.log("The token is: " + token);
 
@@ -74,7 +75,7 @@ exports.register = (req, res) => {
         let hashedPassword = await bcrypt.hash(password, 8);
         console.log(hashedPassword);
 
-        db.query('INSERT INTO users SET ?', {name: name, email: email, password: hashedPassword}, (error, results) => {
+        db.query('INSERT INTO users SET ?', { name: name, email: email, password: hashedPassword }, (error, results) => {
             if (error) {
                 console.log(error);
             } else {
@@ -85,4 +86,42 @@ exports.register = (req, res) => {
             }
         });
     });
+}
+
+exports.isLoggedIn = async (req, res, next) => {
+    if (req.cookies.jwt) {
+        try {
+            //(1) Verificar token
+            const decoded = await promisify(jwt.verify)(req.cookies.jwt,
+                process.env.JWT_SECRET
+            );
+
+            console.log(decoded);
+
+            //(2) Checar se o usuário existe
+            db.query('SELECT * FROM users WHERE id = ?', [decoded.id], (error, result) => {
+                console.log(result);
+
+                if (!result) {
+                    return next();
+                }
+
+                req.user = result[0];
+                return next();
+            })
+        } catch (error) {
+            return next();
+        }
+    } else {
+        next();
+    }
+}
+
+exports.logout = async (req, res) => {
+    res.cookie('jwt', 'logout', {
+        expires: new Date(Date.now() + 2*1000),
+        httpOnly: true
+    });
+
+    res.status(200).redirect('/');
 }
