@@ -30,4 +30,17 @@ router.get('/profile', authController.isLoggedIn, (req, res) => {
     
 })
 
+router.get('/movimentacoes', authController.isLoggedIn, (req, res) => {
+
+    if (req.user) {
+        res.render('movimentacoes', {
+            user: req.user
+        });
+    } else {
+        res.redirect('/login');
+    }
+
+    
+})
+
 module.exports = router;
